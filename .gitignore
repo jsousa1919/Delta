@@ -1,4 +1,5 @@
 *.py[co]
+*.java
 
 # Packages
 *.egg
@@ -25,3 +26,15 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+#data
+*.csv
+*.tar.gz
+*.sqlite
+*.pdf
+*.png
+*.gif
+*.log
+
+#temp
+*~

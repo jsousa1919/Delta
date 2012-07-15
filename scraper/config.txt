@@ -1,0 +1,23 @@
+[Agent]
+wake_every: 2
+stop_words: resources/stopwords.txt
+
+[SQLite]
+database: ../db.sqlite
+
+[Logging]
+file: agent.log
+
+#[MySQL]
+#host: localhost
+#username: root
+#password: 1a2s3d4f
+#database: delta
+
+[Stream]
+username: jsousa1919 
+password: 1a2s3d4f
+
+[FilterStream]
+username: jsousa1919
+password: 1a2s3d4f

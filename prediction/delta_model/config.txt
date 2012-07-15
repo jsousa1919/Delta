@@ -1,0 +1,5 @@
+Training file: MCD_train.csv
+Test file: MCD_sub.csv
+Encog file: elman.eg
+Network name: elman
+Normalized name: elman-norm

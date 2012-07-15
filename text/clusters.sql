@@ -1,0 +1,16 @@
+CREATE TABLE document ( 
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  vector TEXT
+);
+
+CREATE TABLE representation (
+  id INTEGER PRIMARY KEY,
+  lower BOOLEAN,
+  
+
+CREATE TABLE dictionary (
+  id INTEGER PRIMARY KEY,
+  word TINYTEXT
+);
+  
+ALTER TABLE 

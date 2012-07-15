@@ -1,0 +1,26 @@
+Testing various subjectivity weighting functions (how does subjectivity impact weighting of sentiment)
+
+0 <= sent
+0 <= subj
+
+0: sent * 1
+1: sent * subj
+2: sent * (subj + 1)
+3: sent * log(subj + 1)
+4: sent * log(subj + 2)
+5: sent * sqrt(subj)
+6: sent * sqrt(subj + 1)
+7: sent * subj^2
+8: sent * (subj + 1)^2
+
+
+Also testing global weights (how much does the overall sentiment of the article impact mentioned companies above and beyond individual sentences)
+
+global sentiment weighting: [0, .25, .5, .75, 1]
+
+
+other options:
+
+lowercase: yes
+stemmed: yes
+stem titles: N/A
