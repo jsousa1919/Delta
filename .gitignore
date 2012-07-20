@@ -1,5 +1,5 @@
 *.py[co]
-*.java
+*.class
 
 # Packages
 *.egg
@@ -36,5 +36,5 @@ pip-log.txt
 *.gif
 *.log
 
-#temp
+#temporary files
 *~
