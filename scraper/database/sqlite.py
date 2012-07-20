@@ -147,17 +147,15 @@ class database:
             
     def load_schema(self):
         self.ensure_connection()
-        self.cur.execute(self.events_schema())
-        self.cur.execute(self.queries_schema())
         self.cur.execute(self.tasks_schema())
-        self.cur.execute(self.people_schema())
-        self.cur.execute(self.at_mentions_schema())
-        self.cur.execute(self.tweets_schema())
-        self.cur.execute(self.places_schema())
-        self.cur.execute(self.container_schema())
-        self.cur.execute(self.tweet_place_schema())
-        self.cur.execute(self.social_graph())
-        self.cur.execute(self.feeds_schema()) 
+        self.cur.execute(self.stock_schema()) 
+        self.cur.execute(self.keyword_schema())
+        self.cur.execute(self.keyword_version_schema())
+        self.cur.execute(self.representation_schema())
+        self.cur.execute(self.word_bank_schema())
+        self.cur.execute(self.dictionary_schema())
+        self.cur.execute(self.word_representation_schema())
+        self.cur.execute(self.text_options_schema())
         self.cur.execute(self.spr_user_schema()) 
         self.cur.execute(self.spr_portfolio_schema()) 
         self.cur.execute(self.spr_portfolio_track_schema()) 
@@ -165,24 +163,25 @@ class database:
         self.cur.execute(self.spr_updates_schema()) 
         self.cur.execute(self.spr_article_schema()) 
         self.cur.execute(self.spr_article_reference_schema()) 
+        self.cur.execute(self.spr_article_representation_schema())
         self.cur.execute(self.spr_article_track_schema()) 
-        self.cur.execute(self.stock_schema()) 
         self.cur.execute(self.gtrends_schema()) 
         self.cur.execute(self.st_user_schema()) 
         self.cur.execute(self.st_user_track_schema()) 
         self.cur.execute(self.st_tweet_schema()) 
         self.cur.execute(self.st_tweet_ref_schema()) 
+        self.cur.execute(self.st_tweet_representation_schema())
         self.cur.execute(self.st_track_schema()) 
         self.cur.execute(self.st_trending_schema()) 
         self.cur.execute(self.st_trending_ref_schema()) 
         self.cur.execute(self.sh_article_schema())
         self.cur.execute(self.sh_article_ref_schema()) 
+        self.cur.execute(self.sh_article_representation_schema())
         self.cur.execute(self.sh_track_schema()) 
         self.cur.execute(self.fi_track_schema())
         self.cur.execute(self.price_history_schema())
         self.cur.execute(self.sopi_stock_track_schema())
         self.cur.execute(self.gtrends_throttle_schema())
-        self.cur.execute(self.keyword_schema())
         
         self.db_init()
         self.db.commit()
@@ -193,138 +192,6 @@ class database:
         self.cur.execute("INSERT OR IGNORE INTO spr_updates (name, link, last) VALUES ('PRO', 'http://www.stockpickr.com/list/latestpro/', '2000-01-01');")
         self.cur.execute("INSERT OR IGNORE INTO spr_updates (name, link, last) VALUES ('DAILY', 'http://www.stockpickr.com/list/today/', '2000-01-01');")
         self.cur.execute("INSERT OR IGNORE INTO spr_updates (name, link, last) VALUES ('BLOGS', 'http://www.stockpickr.com/list/problog/', '2000-01-01');")
-
-    def tweets_schema(self):
-        return """
-        CREATE TABLE IF NOT EXISTS tweets (
-            tid integer PRIMARY KEY AUTOINCREMENT,
-            pid            integer,
-            qid            integer,
-            twitter_id      bigint,
-            queried_at     datetime,
-            tweet          varchar(255),
-            retweet_of     integer default 0,
-            reply_of       integer default 0,
-            created_at     datetime,
-            language      varchar(5),
-            geo_lat     double,
-            geo_lng     double,
-            geo_type    varchar(100),
-            geo_id      varchar(100),
-            geo_name    varchar(200),
-            estimated_loc varchar(200),
-            source varchar(255)
-        );
-        """        
-
-    def at_mentions_schema(self):
-        return """
-        CREATE TABLE IF NOT EXISTS at_mentions (
-            tid integer,
-            pid integer
-        );
-        """
-
-    def people_schema(self):
-        return """
-        CREATE TABLE IF NOT EXISTS people (
-            pid integer PRIMARY KEY AUTOINCREMENT,
-            twitter_id integer,
-            twitter_name varchar(255),
-            user_location varchar(255)
-        );
-        """
-
-    def tweet_place_schema(self):
-        return """
-        CREATE TABLE IF NOT EXISTS tweets_places (
-            tid integer,
-            pid integer
-        );
-        """
-       
-    def feeds_schema(self):
-        return """
-        CREATE TABLE IF NOT EXISTS feeds (
-            fid integer,
-            feed varchar(255),
-            posted datetime,
-            title text,
-            link text,
-            summary text,
-            tags text
-        );
-        """
-
-    # Note: created_at is UTC
-    def places_schema(self):
-        return """
-        CREATE TABLE IF NOT EXISTS places (
-            pid integer PRIMARY KEY AUTOINCREMENT,
-            name          varchar(255),
-            twitter_id    varchar(255),
-            country       varchar(255),
-            country_code  varchar(5),
-            place_type    varchar(255),
-            url           varchar(255),
-            full_name     varchar(255),
-            geo_shape     varchar(255),
-            geo_lat       double,
-            geo_lng       double,
-            geo_box_1_lat double,
-            geo_box_2_lat double,
-            geo_box_3_lat double,
-            geo_box_4_lat double,
-            geo_box_1_lng double,
-            geo_box_2_lng double,
-            geo_box_3_lng double,
-            geo_box_4_lng double
-        );
-        """
-
-    def container_schema(self):
-        return """
-        CREATE TABLE IF NOT EXISTS spatial_relationships (
-            container integer,
-            contained integer
-        );
-        """
-
-    def social_graph(self):
-        return """
-        CREATE TABLE IF NOT EXISTS graph (
-            follower integer,
-            followed integer,
-            edge     integer default 0
-        );
-        """
-
-    def events_schema(self):
-        return """
-        CREATE TABLE IF NOT EXISTS events (
-            eid integer PRIMARY KEY AUTOINCREMENT,
-            source        varchar(255),
-            title         varchar(255),
-            venue         varchar(255),
-            address1      varchar(255),
-            address2      varchar(255),
-            description   text,
-            url           varchar(255),
-            event_time    datetime,
-            ticket_price  float default 0
-        );
-        """
-        
-    def queries_schema(self):
-        return """
-        CREATE TABLE IF NOT EXISTS queries (
-            qid integer PRIMARY KEY AUTOINCREMENT,
-            eid           integer default 0,
-            query         varchar(255),
-            start_date    datetime,
-            stop_date     datetime
-        );
-        """
 
     def tasks_schema(self):
         return """
@@ -415,6 +282,20 @@ class database:
             stock varchar(8)
         );
         """
+    
+    def spr_article_representation_schema(self):
+        return """
+        CREATE TABLE IF NOT EXISTS spr_article_representation (
+            rid integer,
+            aid integer,
+            sid integer,
+            term_frequency integer,
+            positive integer,
+            negative integer,
+            subjectivity integer,
+            contribution real
+        );
+        """
 
     def spr_article_track_schema(self):
         return """
@@ -497,6 +378,20 @@ class database:
             sid integer
         );
         """
+    
+    def st_tweet_representation_schema(self):
+        return """
+        CREATE TABLE IF NOT EXISTS st_tweet_representation (
+            rid integer,
+            tid integer,
+            sid integer,
+            term_frequency integer,
+            positive integer,
+            negative integer,
+            subjectivity integer,
+            contribution real
+        );
+        """
 
     def st_track_schema(self):
         return """
@@ -553,6 +448,21 @@ class database:
         );
         """
     
+    def sh_article_representation_schema(self):
+        return """
+        CREATE TABLE IF NOT EXISTS sh_article_representation (
+            rid integer,
+            aid integer,
+            sid integer,
+            term_frequency integer,
+            positive integer,
+            negative integer,
+            subjectivity integer,
+            contribution real
+        );
+        """
+            
+    
     def sh_track_schema(self):
 		return """
         CREATE TABLE IF NOT EXISTS sh_track (
@@ -585,12 +495,74 @@ class database:
             volume integer
         );
         """
+    
+    def keyword_version_schema(self):
+        return """
+        CREATE TABLE IF NOT EXISTS keyword_version (
+            kvid integer PRIMARY KEY AUTOINCREMENT,
+            date datetime,
+            description text
+        );
+        """
 
     def keyword_schema(self):
         return """
         CREATE TABLE IF NOT EXISTS keyword (
+            kvid integer,
             sid integer,
-            type text,
-            word text
+            type varchar(32),
+            word varchar(64)
+        );
+        """
+    
+    def representation_schema(self):
+        return """
+        CREATE TABLE IF NOT EXISTS representation (
+            rid integer PRIMARY KEY AUTOINCREMENT,
+            oid integer,
+            did integer,
+            kvid integer,
+            date datetime
+        );
+        """
+    
+    def word_bank_schema(self):
+        return """
+        CREATE TABLE IF NOT EXISTS word_bank (
+            wid integer PRIMARY KEY AUTOINCREMENT,
+            word varchar(64),
+            form_of integer
+        );
+        """
+    
+    def dictionary_schema(self):
+        return """
+        CREATE TABLE IF NOT EXISTS dictionary (
+            did integer PRIMARY KEY AUTOINCREMENT,
+            date datetime,
+            description text
+        );
+        """
+    
+    def word_representation_schema(self):
+        return """
+        CREATE TABLE IF NOT EXISTS word_representation (
+            did integer,
+            wid integer,
+            subjectivity integer,
+            polarity integer,
+            PRIMARY KEY (did, wid)
+        );
+        """
+    
+    def text_options_schema(self):
+        return """
+        CREATE TABLE IF NOT EXISTS text_options (
+            oid integer PRIMARY KEY AUTOINCREMENT,
+            date datetime,
+            description text,
+            lowercase boolean,
+            stemmer varchar(32),
+            stem_titles boolean
         );
         """
