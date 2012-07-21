@@ -20,14 +20,11 @@ for each in words:
 wnl = nltk.stem.WordNetLemmatizer()
 
 class Text(object):
-    lower = True
-    stem = True
-    stem_titles = True
     removals = []
 
-    def __init__(self, text):
+    def __init__(self, text, lower, stemmer, stem_titles):
         self.raw_text = text
-        self.initialize()
+        self.initialize(lower, stemmer, stem_titles)
 
     # find all words in the text
     def make_list(self):
@@ -49,17 +46,18 @@ class Text(object):
     # perform word stemming
     # set 'stem_titles' to stem title words since the stemmer doesn't like them (i.e. Apples)
     def stem(self):
-        if self.lower:
-            self.clean_list = [wnl.lemmatize(word) for word in self.clean_list]
-        else:
-            # wnl doesn't lemmatize with uppercase characters
-            i = 0
-            for word in self.clean_list:
-                if self.stem_titles and word.istitle():
-                    self.clean_list[i] = wnl.lemmatize(word.lower()).title()
-                else:
-                    self.clean_list[i] = wnl.lemmatize(word)
-                i += 1
+        if self.stemmer is 'wnl':
+            if self.lower:
+                self.clean_list = [wnl.lemmatize(word) for word in self.clean_list]
+            else:
+                # wnl doesn't lemmatize with uppercase characters
+                i = 0
+                for word in self.clean_list:
+                    if self.stem_titles and word.istitle():
+                        self.clean_list[i] = wnl.lemmatize(word.lower()).title()
+                    else:
+                        self.clean_list[i] = wnl.lemmatize(word)
+                    i += 1
 
     # create frequency distribution from words in text
     def local_freq_dist(self):
@@ -73,18 +71,18 @@ class Text(object):
     def words(self):
         return self.freq_dist.keys()
 
-    def initialize(self, lower = None, stem = None, title = None):
+    def initialize(self, lower = None, stemmer = None, stem_titles = None):
         if lower is not None:
             self.lower = lower
-        if stem is not None:
-            self.stem = stem
-        if title is not None:
-            self.stem_titles = title
+        if stemmer is 'wnl':
+            self.stemmer = wnl
+        if stem_titles is not None:
+            self.stem_titles = stem_titles
         self.text = self.raw_text.lower() if lower else self.raw_text
         self.make_list()
         self.remove_stopwords()
         self.remove_words()
-        if stem:
+        if stemmer:
             self.stem()
         self.local_freq_dist()
 
@@ -123,7 +121,7 @@ class Text(object):
                 elif polarity[word] < 0:
                     self.neg -= self.freq_dist[word] * polarity[word]
 
-    def process(self, subjmod = lambda x: 1.0, **args):
+    def process(self):
         self.extract_mentions()
         self.calculate_metrics()
         data = {}
@@ -131,7 +129,13 @@ class Text(object):
         for co in self.mentions:
             count = self.mentions[co]
             frac = float(count) / total
-            data[co] = [count, self.pos * frac * subjmod(self.subj), self.neg * frac * subjmod(self.subj), 1]
+            data[co] = {
+                'contribution': frac,
+                'tf': count,
+                'df': 1,
+                'positive': self.pos,
+                'negative': self.neg,
+            }
         return data
 
     def sentiment(self):

@@ -2,8 +2,8 @@ from datetime import datetime
 from Text import Text
 
 class Blog(Text):
-    def __init__(self, title, date, text):
-        super(Blog, self).__init__(text)
+    def __init__(self, title, date, text, lower, stemmer, stem_titles):
+        super(Blog, self).__init__(text, lower, stemmer, stem_titles)
         self.title = title
         self.date = date
 
