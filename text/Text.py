@@ -135,6 +135,7 @@ class Text(object):
                 'df': 1,
                 'positive': self.pos,
                 'negative': self.neg,
+                'subjectivity': self.subj,
             }
         return data
 
