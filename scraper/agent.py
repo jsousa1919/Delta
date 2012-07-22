@@ -65,7 +65,7 @@ class Agent:
     ## but for the time being it will all be globbed into this function
 
     def unfinished_tasks(self):
-        sql = "SELECT tid, task, after, reschedule, delta, args FROM tasks WHERE complete = 0 AND after < ? ORDER BY after ASC"
+        sql = "SELECT tid, task, after, delta, args FROM tasks WHERE complete = 0 AND after < ? ORDER BY after ASC"
         params = [datetime.datetime.now()]
         return self.db.query(sql, params)
 
@@ -81,10 +81,10 @@ class Agent:
             return
 
         logging.info("Initializing task %d: %s", task[0], taskType.taskName)
-        taskImpl = taskType(self, pickle.loads(base64.b64decode(task[5])))
+        taskImpl = taskType(self, pickle.loads(base64.b64decode(task[4])))
         taskImpl.tid = task[0]
-        taskImpl.reschedules = bool(task[3])
-        taskImpl.delta = task[4] 
+        taskImpl.after = task[2]
+        taskImpl.delta = task[3] 
 
         try:
             logging.debug("Executing...")
@@ -94,12 +94,9 @@ class Agent:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             trace = traceback.format_exception(exc_type, exc_value, exc_traceback)
             logging.critical("Unknown Exception: %s", str(ex))
-            logging.critical("Task Details: %s %s", taskImpl.taskName, str(taskImpl.args))
+            logging.critical("Task Details: %d - %s %s", taskImpl.tid, taskImpl.taskName, str(taskImpl.args))
             for tb in trace:
                 logging.critical(tb)
-            taskImpl.reschedules = False
-            taskImpl.delta = 600
-            taskImpl.schedule_if_none_exist(True)
 
         taskImpl.complete()
 

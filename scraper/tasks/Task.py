@@ -1,8 +1,17 @@
-import datetime
+from datetime import datetime, timedelta
 import cPickle as pickle
 import base64
 import urllib2
 import logging
+
+DELTA = {
+    'second': timedelta(seconds = 1),
+    'minute': timedelta(minutes = 1),
+    'hour': timedelta(hours = 1),
+    'day': timedelta(days = 1),
+    'week': timedelta(days = 7),
+    'month': timedelta(days = 31),
+}
 
 class Task(object):
     taskName = "NoOp"
@@ -10,19 +19,44 @@ class Task(object):
     def __init__(self, agent, args):
         self.agent = agent
         self.args = args
-        self.reschedules = False
         self.delta = 0
+        self.starting = None
+        self.after = None
+        self.go_now = False
         self.tid = 0
         self.db = self.agent.db
-        
-    def schedule(self, go_now = False):
-        logging.info("Scheduling Task in %ds: %s %s", 0 if go_now else self.delta, self.taskName, str(self.args))
-        sql = "INSERT INTO tasks (task, after, reschedule, delta, args) VALUES (?,?,?,?,?);"
-        if go_now:
-            thedate = datetime.datetime.now()
+    
+    def parse_next(self):
+        delta = str(self.delta).split(' ')
+        if len(delta) is 1:
+            return (self.after or self.starting or datetime.now()) + timedelta(seconds = int(delta[0]))
         else:
-            thedate = datetime.datetime.now() + datetime.timedelta(seconds=self.delta)
-        params = [self.taskName, thedate, int(self.reschedules), self.delta, base64.b64encode(pickle.dumps(self.args))]
+            (number, unit) = delta
+            number = int(number)
+            if unit.endswith('s'):
+                unit = unit[:-1]
+                self.delta = self.delta[:-1]
+            
+            old_date = (self.after or self.starting or datetime.now())
+            new_date = old_date + (unit * DELTA[unit])
+            if unit == 'month':
+                while new_date.month - old_date.month % 12 > 1:
+                    new_date -= timedelta(days=1)
+            return new_date
+        
+    def schedule(self):
+        if self.go_now:
+            logging.info("Scheduling Task now: %s %s", self.taskName, str(self.args))
+            thedate = datetime.now()
+        elif self.starting:
+            logging.info("Scheduling Task on %s: %s %s", str(self.starting), self.taskName, str(self.args))
+            thedate = self.starting
+        else:
+            logging.info("Scheduling Task in %s: %s %s", self.delta, self.taskName, str(self.args))
+            thedate = self.parse_next()
+            
+        sql = "INSERT INTO tasks (task, after, delta, args) VALUES (?,?,?,?,?);"
+        params = [self.taskName, thedate, self.delta, base64.b64encode(pickle.dumps(self.args))]
         self.db.query(sql, params)
         self.db.commit()
 
@@ -36,15 +70,15 @@ class Task(object):
         if not self.db.bool_query(sql, vals):
             self.schedule()
 
-    def complete(self, allow_reschedule=True):
+    def complete(self):
         sql = "UPDATE tasks SET complete = ?, completed_on = ? WHERE tid = ?"
-        params = [1, datetime.datetime.now(), self.tid]
+        params = [1, datetime.now(), self.tid]
         self.db.query(sql, params)
         self.db.commit()
 
         logging.info("Completed Task Successfully")
         # Reschedule
-        if allow_reschedule and self.reschedules:
+        if self.delta and seld.delta is not '0':
             logging.info("Rescheduling Task")
             self.schedule()
 

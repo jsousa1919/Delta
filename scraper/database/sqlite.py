@@ -199,11 +199,10 @@ class database:
             tid integer PRIMARY KEY AUTOINCREMENT,
             task          varchar(255),
             after         datetime,
-            reschedule    integer default 0,
             complete      integer default 0,
             completed_on  datetime,
-            args,         text,
-            delta         integer
+            args          text,
+            delta         text,
         );
         """
 
