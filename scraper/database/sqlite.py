@@ -199,10 +199,11 @@ class database:
             tid integer PRIMARY KEY AUTOINCREMENT,
             task          varchar(255),
             after         datetime,
+            reschedule    boolean,
             complete      integer default 0,
             completed_on  datetime,
             args          text,
-            delta         text,
+            delta         text
         );
         """
 
@@ -434,7 +435,7 @@ class database:
             date datetime,
             headline text,
             article text,
-			      link text,
+            link text,
             doc integer
         );
         """

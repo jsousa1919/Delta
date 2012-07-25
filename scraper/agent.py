@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import threading
-import datetime
+from datetime import datetime
 import pytz
 import sys
 import threading
@@ -23,7 +23,7 @@ class Agent:
         self.db = database(self.db_params)
         self.wake_interval = int(config.get("Agent", "wake_every"))
         self.local_timezone = pytz.timezone ("America/New_York")
-        self.woke_at = self.utc_for(datetime.datetime.now())
+        self.woke_at = self.utc_for(datetime.now())
         self.tasks = dict([(t.taskName, t) for t in tasks.TaskTypes]) 
         self.ST_user_cache = []
         self.ST_TN_cache = []
@@ -37,7 +37,7 @@ class Agent:
         
     def wake(self):
         self.db = database(self.db_params)
-        self.woke_at = self.utc_for(datetime.datetime.now())
+        self.woke_at = self.utc_for(datetime.now())
         logging.debug("Woke at: %s", self.woke_at)
 
         self.process_tasks()
@@ -65,8 +65,8 @@ class Agent:
     ## but for the time being it will all be globbed into this function
 
     def unfinished_tasks(self):
-        sql = "SELECT tid, task, after, delta, args FROM tasks WHERE complete = 0 AND after < ? ORDER BY after ASC"
-        params = [datetime.datetime.now()]
+        sql = "SELECT tid, task, after, delta, reschedule, args FROM tasks WHERE complete = 0 AND after < ? ORDER BY after ASC"
+        params = [datetime.now()]
         return self.db.query(sql, params)
 
     def process_tasks(self):
@@ -81,10 +81,11 @@ class Agent:
             return
 
         logging.info("Initializing task %d: %s", task[0], taskType.taskName)
-        taskImpl = taskType(self, pickle.loads(base64.b64decode(task[4])))
+        taskImpl = taskType(self, pickle.loads(base64.b64decode(task[5])))
         taskImpl.tid = task[0]
-        taskImpl.after = task[2]
-        taskImpl.delta = task[3] 
+        taskImpl.after = datetime.strptime(task[2], "%Y-%m-%d %H:%M:%S.%f")
+        taskImpl.delta = task[3]
+        taskImpl.reschedule = task[4]
 
         try:
             logging.debug("Executing...")

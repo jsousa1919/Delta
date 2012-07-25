@@ -22,10 +22,10 @@ class Monitor:
         print "============================================================================"
         sql = "SELECT tid,task,after,delta,args FROM tasks WHERE complete=0 ORDER BY after;"
         res = self.agent.db.query(sql)
-        print '| {0:3} | {1:10} | {2:29} | {4:6} |'.format("TID", "Task", "After", "Delta")
+        print '| {0:3} | {1:10} | {2:29} | {3:6} |'.format("TID", "Task", "After", "Delta")
         print "----------------------------------------------------------------------------"
         for row in res:
-            print '| {0:3} | {1:10} | {2:29} | {4:6} |'.format(row[0], row[1], row[2], row[3])
+            print '| {0:3} | {1:10} | {2:29} | {3:6} |'.format(row[0], row[1], row[2], row[3])
             args = ""
             if (len(row[4]) > 0):
                 args = str(pickle.loads(base64.b64decode(row[4])))
@@ -59,8 +59,9 @@ class Monitor:
             logging.info(log)
             print log
 
-            taskImpl.delta = every
+            taskImpl.delta = ' '.join(every)
             taskImpl.go_now = not delay
+            taskImpl.reschedule = True
             taskImpl.schedule()
 
         else:

@@ -20,6 +20,7 @@ class Task(object):
         self.agent = agent
         self.args = args
         self.delta = 0
+        self.reschedule = False
         self.starting = None
         self.after = None
         self.go_now = False
@@ -38,7 +39,7 @@ class Task(object):
                 self.delta = self.delta[:-1]
             
             old_date = (self.after or self.starting or datetime.now())
-            new_date = old_date + (unit * DELTA[unit])
+            new_date = old_date + (number * DELTA[unit])
             if unit == 'month':
                 while new_date.month - old_date.month % 12 > 1:
                     new_date -= timedelta(days=1)
@@ -55,8 +56,8 @@ class Task(object):
             logging.info("Scheduling Task in %s: %s %s", self.delta, self.taskName, str(self.args))
             thedate = self.parse_next()
             
-        sql = "INSERT INTO tasks (task, after, delta, args) VALUES (?,?,?,?,?);"
-        params = [self.taskName, thedate, self.delta, base64.b64encode(pickle.dumps(self.args))]
+        sql = "INSERT INTO tasks (task, after, delta, reschedule, args) VALUES (?,?,?,?,?);"
+        params = [self.taskName, thedate, self.delta, self.reschedule, base64.b64encode(pickle.dumps(self.args))]
         self.db.query(sql, params)
         self.db.commit()
 
@@ -78,7 +79,7 @@ class Task(object):
 
         logging.info("Completed Task Successfully")
         # Reschedule
-        if self.delta and seld.delta is not '0':
+        if self.reschedule and self.reschedule is not '0':
             logging.info("Rescheduling Task")
             self.schedule()
 
