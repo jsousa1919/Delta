@@ -4,6 +4,7 @@ import StockHouse
 import GTrends
 import FlameIndex
 import SocialPicks
+import Text
 import Task
 
 TaskTypes = [   StockPickr.SPQueryUserTask,
@@ -32,5 +33,6 @@ TaskTypes = [   StockPickr.SPQueryUserTask,
                 SocialPicks.SoPiScrapeTask,
                 SocialPicks.SoPiQueryStockTask,
                 SocialPicks.SoPiDumpTask,
+                Text.TextAnalysisTask,
                 Task.DieTask
             ]

@@ -259,7 +259,7 @@ class SPQueryArticleTask(Task):
         self.now = datetime.datetime.now().date()
 
         logging.debug("Checking for StockPickr article at %s", self.link)
-        sql = "select aid, last from spr_article where link=?;"
+        sql = "select id, last from spr_article where link=?;"
         res = self.db.query(sql, self.link.encode("ascii", "ignore"), one=True)
         if res:
             self.id = res[0]
@@ -268,15 +268,15 @@ class SPQueryArticleTask(Task):
             self.id = self.last = None
 
     def finish(self):
-        art_col = ("aid", "link", "title", "author", "date", "text", "notes", "last")
-        art_ref_col = ("aid", "stock")
-        art_track_col = ("aid", "last", "views")
+        art_col = ("id", "link", "title", "author", "date", "text", "notes", "last")
+        art_ref_col = ("id", "stock")
+        art_track_col = ("id", "last", "views")
 
         logging.info("Storing collected data")
         art = dict([(col, self.data[col]) for col in art_col])
         if not self.id:
             self.db.insert("spr_article", art)
-            self.data["aid"] = self.db.last_insert_id()
+            self.data["id"] = self.db.last_insert_id()
             for self.data["stock"] in self.data["stocks"]:
                 art_ref = dict([(col, self.data[col]) for col in art_ref_col])
                 self.db.insert("spr_article_reference", art_ref)
@@ -339,7 +339,7 @@ class SPQueryArticleTask(Task):
                 text = text + ' ' + p.text
 
         # wrap up
-        columns = ("link", "title", "author", "date", "text", "notes", "aid", "views", "stocks", "last")
+        columns = ("link", "title", "author", "date", "text", "notes", "id", "views", "stocks", "last")
         data = (\
             self.link, \
             title.encode("ascii", "ignore"), \
@@ -380,14 +380,14 @@ class SPDumpTask(DumpTask):
         'query': 'select %s from spr_article', \
         'drop': None, \
         'file': 'spr_article.csv', \
-        'columns': ['aid', 'link', 'title', 'author', 'date', 'text', 'notes'] \
+        'columns': ['id', 'link', 'title', 'author', 'date', 'text', 'notes'] \
     }, { \
         'query': 'select %s from spr_article_reference', \
         'drop': None, \
         'file': 'spr_article_reference.csv', \
-        'columns': ['aid', 'stock'] \
+        'columns': ['id', 'stock'] \
     }, { \
         'query': 'select %s from spr_article_track', \
         'drop': None, \
         'file': 'spr_article_track.csv', \
-        'columns': ['aid', 'last', 'views']}]
+        'columns': ['id', 'last', 'views']}]

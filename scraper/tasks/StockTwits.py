@@ -1,5 +1,3 @@
-import time
-import re
 import csv
 import datetime
 import re
@@ -104,13 +102,13 @@ class STQueryStockTask(STTask):
 
     def finish(self):
         tweet_col = ("uid", "date", "text")
-        tweet_ref_col = ("tid", "sid")
+        tweet_ref_col = ("id", "sid")
         track_col = ("sid", "start", "end", "count")
 
         logging.info("Storing collected data")
         for data in self.data:
             self.db.insert('st_tweet', dict([(col, data[col]) for col in tweet_col]))
-            data['tid'] = self.db.last_insert_id()
+            data['id'] = self.db.last_insert_id()
 
             refs = [self.get_stock(symbol) for symbol in data['refs']]
             for data['sid'] in refs:
@@ -274,12 +272,12 @@ class STDumpTask(DumpTask):
         'query': 'select %s from st_tweet', \
         'drop': None, \
         'file': 'st_tweet.csv', \
-        'columns': ['tid', 'uid', 'date', 'text'] \
+        'columns': ['id', 'uid', 'date', 'text'] \
     }, { \
         'query': 'select %s from st_tweet_ref', \
         'drop': None, \
         'file': 'st_tweet_ref.csv', \
-        'columns': ['tid', 'sid'] \
+        'columns': ['id', 'sid'] \
     }, { \
         'query': 'select %s from st_track', \
         'drop': None, \
