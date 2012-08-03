@@ -101,7 +101,7 @@ class SHNewPage(Task):
             
 class SHQueryArticle(Task):
     taskName = "SHQueryArticle"
-    data_col = ('aid', 'date', 'headline', 'article', 'refs', 'link')
+    data_col = ('id', 'date', 'headline', 'text', 'refs', 'link')
     
     def __init__(self, agent, args):
         super(SHQueryArticle, self).__init__(agent, args)
@@ -114,7 +114,7 @@ class SHQueryArticle(Task):
         self.data = []
         
     def get_article(self, headline):
-        sql = "select aid from sh_article where headline=?;"
+        sql = "select id from sh_article where headline=?;"
         aid = self.db.query(sql, [headline], one=True)
         if not aid:
             logging.debug("New article")
@@ -132,13 +132,13 @@ class SHQueryArticle(Task):
             self.data.append(dict(zip(self.data_col, data)))
             
     def finish(self):
-        SHArticle_col = ("date", "headline", "article", "link")
-        SHArticle_ref_col = ("aid", "sid")
+        SHArticle_col = ("date", "headline", "text", "link")
+        SHArticle_ref_col = ("id", "sid")
         track_col = ("sid", "start", "end", "count")
         
         logging.info("Storing collected data")
         for data in self.data:
-            self.db.update('sh_article', dict([(col, data[col]) for col in SHArticle_col]), {"aid": data['aid']})
+            self.db.update('sh_article', dict([(col, data[col]) for col in SHArticle_col]), {"id": data['id']})
 
             refs = [self.get_stock(symbol) for symbol in data['refs']] #sids of referenced stocks
             # symRefs = [symbol for symbol in data['refs']] #all stocks being referenced  # this does nothing
@@ -176,12 +176,12 @@ class SHDumpTask(DumpTask):
         'query': 'select %s from sh_article', \
         'drop': None, \
         'file': 'sh_article.csv', \
-        'columns': ['aid', 'date', 'headline', 'article'] \
+        'columns': ['id', 'date', 'headline', 'text'] \
     }, { \
         'query': 'select %s from sh_article_ref', \
         'drop': None, \
         'file': 'sh_article_ref.csv', \
-        'columns': ['aid', 'sid', 'symbol'] \
+        'columns': ['id', 'sid', 'symbol'] \
     }, { \
         'query': 'select %s from sh_track', \
         'drop': None, \

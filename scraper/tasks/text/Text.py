@@ -1,22 +1,6 @@
 import nltk
 import re
 
-with open('polarity/subjclueslen1polar.tff', 'r') as f:
-    words = f.read().split('\n')
-
-polarity = dict()
-subjectivity = dict()
-sent_mapping = {'strongneg': -2, 'weakneg': -1, 'neutral': 0, 'both': 0, 'weakpos': 1, 'strongpos': 2}
-subj_mapping = {'weaksubj': 1, 'strongsubj': 2}
-
-for each in words:
-  prop_strings = each.split(' ')
-  if len(prop_strings) < 7: continue
-  props = [prop.split('=') for prop in prop_strings]
-  props = dict([prop for prop in props if len(prop) is 2])
-  polarity[props['word1']] = sent_mapping[props['mpqapolarity']]
-  subjectivity[props['word1']] = subj_mapping[props['type']]
-
 wnl = nltk.stem.WordNetLemmatizer()
 
 class Text(object):
@@ -110,20 +94,20 @@ class Text(object):
         else:
             return False
 
-    def calculate_metrics(self):
+    def calculate_metrics(self, subjectivity, polarity):
         self.subj = self.pos = self.neg = 0
         for word in self.freq_dist:
             word = word.lower()
-            if word in subjectivity:
-                self.subj += self.freq_dist[word] * subjectivity[word]
-                if polarity[word] > 0:
-                    self.pos += self.freq_dist[word] * polarity[word]
-                elif polarity[word] < 0:
-                    self.neg -= self.freq_dist[word] * polarity[word]
+            self.subj += self.freq_dist[word] * subjectivity(word)
+            pol = polarity(word)
+            if pol > 0:
+                self.pos += self.freq_dist[word] * pol
+            elif pol < 0:
+                self.neg -= self.freq_dist[word] * pol
 
-    def process(self):
+    def process(self, subj, pol):
         self.extract_mentions()
-        self.calculate_metrics()
+        self.calculate_metrics(subj, pol)
         data = {}
         total = sum(self.mentions.values())
         for co in self.mentions:

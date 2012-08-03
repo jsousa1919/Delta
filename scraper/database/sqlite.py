@@ -264,7 +264,7 @@ class database:
     def spr_article_schema(self):
         return """
         CREATE TABLE IF NOT EXISTS spr_article (
-            aid integer PRIMARY KEY AUTOINCREMENT,
+            id integer PRIMARY KEY AUTOINCREMENT,
             link varchar(128) UNIQUE,
             title varchar(128),
             author varchar(64),
@@ -279,7 +279,7 @@ class database:
     def spr_article_reference_schema(self):
         return """
         CREATE TABLE IF NOT EXISTS spr_article_reference (
-            aid integer,
+            id integer,
             stock varchar(8)
         );
         """
@@ -288,7 +288,7 @@ class database:
         return """
         CREATE TABLE IF NOT EXISTS spr_article_representation (
             rid integer,
-            aid integer,
+            id integer,
             sid integer,
             term_frequency integer,
             positive integer,
@@ -301,7 +301,7 @@ class database:
     def spr_article_track_schema(self):
         return """
         CREATE TABLE IF NOT EXISTS spr_article_track (
-            aid integer,
+            id integer,
             last date,
             views integer
         );
@@ -364,7 +364,7 @@ class database:
     def st_tweet_schema(self):
         return """
         CREATE TABLE IF NOT EXISTS st_tweet (
-            tid integer PRIMARY KEY AUTOINCREMENT,
+            id integer PRIMARY KEY AUTOINCREMENT,
             uid integer,
             date datetime,
             text text,
@@ -375,7 +375,7 @@ class database:
     def st_tweet_ref_schema(self):
         return """
         CREATE TABLE IF NOT EXISTS st_tweet_ref (
-            tid integer,
+            id integer,
             sid integer
         );
         """
@@ -384,7 +384,7 @@ class database:
         return """
         CREATE TABLE IF NOT EXISTS st_tweet_representation (
             rid integer,
-            tid integer,
+            id integer,
             sid integer,
             term_frequency integer,
             positive integer,
@@ -432,10 +432,10 @@ class database:
     def sh_article_schema(self):
         return """
         CREATE TABLE IF NOT EXISTS sh_article (
-            aid integer PRIMARY KEY AUTOINCREMENT,
+            id integer PRIMARY KEY AUTOINCREMENT,
             date datetime,
             headline text,
-            article text,
+            text text,
             link text,
             doc integer
         );
@@ -444,7 +444,7 @@ class database:
     def sh_article_ref_schema(self):
         return """
         CREATE TABLE IF NOT EXISTS sh_article_ref (
-            aid integer,
+            id integer,
             sid integer
         );
         """
@@ -453,7 +453,7 @@ class database:
         return """
         CREATE TABLE IF NOT EXISTS sh_article_representation (
             rid integer,
-            aid integer,
+            id integer,
             sid integer,
             term_frequency integer,
             positive integer,

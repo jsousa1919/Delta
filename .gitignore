@@ -38,3 +38,4 @@ pip-log.txt
 
 #temporary files
 *~
+*.bak

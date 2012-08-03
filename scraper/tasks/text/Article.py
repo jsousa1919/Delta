@@ -27,10 +27,10 @@ class Article(Blog):
         for sent in self.sentences:
             sent.calculate_metrics()
 
-    def process(self):
+    def process(self, subj, pol):
         data = {}
         for sent in self.sentences:
-            values = sent.process()
+            values = sent.process(subj, pol)
             for co in values:
                 if co not in data:
                     data[co] = values[co]
