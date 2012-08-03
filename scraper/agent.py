@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 import sys
 import threading
@@ -13,12 +13,19 @@ from database.sqlite import database
 import logging
 import traceback
 
+INTERVAL = 60
+
 class Agent:
+    wakes = 0
+    tasks_completed = 0
+    start_time = None
+    last_status = None
+
     def __init__(self, config_file):
         config = ConfigParser.ConfigParser()
         config.readfp(open(config_file))
         self.log_file = config.get("Logging", "file")
-        logging.basicConfig(filename = self.log_file, level = logging.DEBUG, format = "%(levelname)8s || %(asctime)23s || Module %(module)20s:%(lineno)3d || %(message)s")
+        logging.basicConfig(filename = self.log_file, level = logging.DEBUG, format = "%(levelname)8s || %(asctime)23s || Module %(module)15s:%(lineno)3d || %(message)s")
         self.db_params = [config.get("SQLite", "database")]
         self.db = database(self.db_params)
         self.wake_interval = int(config.get("Agent", "wake_every"))
@@ -29,6 +36,8 @@ class Agent:
         self.ST_TN_cache = []
         self.expire = False
         self.blackboard = {}
+        self.start_time = datetime.now()
+        self.last_status = datetime.now()
         logging.info("Initialized agent with config: %s", config_file)
     
     def utc_for(self, dt):
@@ -47,6 +56,15 @@ class Agent:
         self.db.commit()
         self.db.close()
         self.db = None
+        self.wakes += 1
+
+        now = datetime.now()
+        diff = (now - self.last_status).total_seconds()
+        if diff > INTERVAL:
+            minutes = (now - self.start_time).total_seconds() / 60
+            logging.info("Wakes per minute: %f" % (self.wakes / minutes))
+            logging.info("Tasks per minute: %f" % (self.tasks_completed / minutes))
+            self.last_status = now
             
     ###############################################################
     ## Blackbaord
@@ -90,6 +108,7 @@ class Agent:
         try:
             logging.debug("Executing...")
             taskImpl.execute()
+            self.tasks_completed += 1
         except Exception as ex:
             self.db.rollback()
             exc_type, exc_value, exc_traceback = sys.exc_info()

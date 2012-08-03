@@ -182,6 +182,7 @@ class database:
         self.cur.execute(self.price_history_schema())
         self.cur.execute(self.sopi_stock_track_schema())
         self.cur.execute(self.gtrends_throttle_schema())
+        self.cur.execute(self.stats_schema())
         
         self.db_init()
         self.db.commit()
@@ -564,5 +565,14 @@ class database:
             lowercase boolean,
             stemmer varchar(32),
             stem_titles boolean
+        );
+        """
+
+    def stats_schema(self):
+        return """
+        CREATE TABLE IF NOT EXISTS stats (
+            time datetime,
+            tasks real,
+            wakes real
         );
         """

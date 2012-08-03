@@ -54,7 +54,9 @@ class GTQueryStockTask(Task):
         last_check = datetime.datetime.strptime(res, "%Y-%m-%d %H:%M:%S.%f") if res else None
         if last_check and self.now - last_check < datetime.timedelta(seconds=10):
             # print self.now - last_check
-            raise Exception("Global throttle rate for GTrends has been exceeded")
+            logging.warning("Global throttle rate for GTrends has been exceeded")
+            self.delta = random.randint(0,600)
+            self.schedule()
 
     def finish(self):
         logging.info("Storing collected data")
