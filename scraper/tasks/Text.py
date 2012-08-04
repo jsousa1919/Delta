@@ -30,12 +30,12 @@ class TextTask(Task):
         (self.lowercase, self.stemmer, self.stem_titles) = self.db.query(sql, oid, one=True)
 
         # get sentiment dictonary
-        sql = "SELECT wid, subjectivity, polarity FROM text_options WHERE did = ?"
+        sql = "SELECT DISTINCT word.word, rep.subjectivity, rep.polarity FROM word_representation rep, word_bank word WHERE did = ? AND word.wid = rep.wid"
         res = self.db.query(sql, did)
-        self.dictionary = dict([(wid, (subj, pol)) for (wid,subj,pol) in res])
+        self.dictionary = dict([(word, (subj, pol)) for (word,subj,pol) in res])
 
         # get company keywords
-        self.companies = [Company(symbol) for symbol in self.followed_stocks()]
+        self.companies = [Company.Company(symbol) for symbol in self.followed_stocks()]
         id_sql = "SELECT sid FROM stock WHERE symbol = ?"
         for co in self.companies:
             co.set_sid(self.db.query(id_sql, co.symbol, one=True))
@@ -49,18 +49,18 @@ class TextTask(Task):
         entry = self.dictionary.get(wid)
         return entry[0] if entry else 0
     
-    def get_text(self, table, rid, max):
-        sql = "SELECT id, date, text FROM ? WHERE id NOT IN (SELECT id FROM ? WHERE rid = ?) LIMIT ?"
-        res = self.db.query(sql, [table, table + "_representation", rid, max])
-        return [{'id': id, 'date': date, 'text': text} for (id, date, text) in res]
+    def get_text(self, table, rid, mx):
+        sql = "SELECT id, date, text FROM %s WHERE id NOT IN (SELECT id FROM %s WHERE rid = ?) LIMIT ?"
+        res = self.db.query(sql % (table, table + "_representation"), [rid, mx])
+        return [{'id': tid, 'date': date, 'text': text} for (tid, date, text) in res]
 
 
 class TextAnalysisTask(TextTask):
     taskName="TextAnalysis"
 
     def __init__(self, agent, args):
-        super(TextConvertTask, self).__init__(agent, args)
-        self.repr = args[0] if len(args) > 0 else None
+        super(TextAnalysisTask, self).__init__(agent, args)
+        self.repr = int(args[0]) if len(args) > 0 else None
         if self.repr == "current": self.repr = None
         self.max = int(args[1]) if len(args) > 1 else 100
 
@@ -68,14 +68,16 @@ class TextAnalysisTask(TextTask):
         if not self.repr:
             sql = "select max(rid) from representation;"
             self.repr = self.db.query(sql, one=True)
+        logging.info("Starting analysis with repr %d", self.repr)
         self.get_options()
 
     def analyze(self, table, text_class):
         corpus = self.get_text(table, self.repr, self.max)
-        logging.info("Analyzing %d articles from %s", (len(corpus), table))
+        logging.info("Analyzing %d articles from %s", len(corpus), table)
         for article in corpus:
-            res = text_class(None, article['date'], article['text'], self.lower, self.stemmer, self.stem_titles)\
-                .process(self.subjectivity, self.polarity)
+            t = text_class(None, article['date'], article['text'], bool(self.lowercase), self.stemmer, bool(self.stem_titles))
+            t.extract_mentions(self.companies)
+            res = t.process((lambda x: self.subjectivity(x)), (lambda x: self.sentiment(x)))
             for co in res:
                 data = res[co]
                 self.db.insert(table + "_representation", {
@@ -90,7 +92,9 @@ class TextAnalysisTask(TextTask):
                 })
 
     def execute(self):
-        logging.info("Starting full text analysis with representation %d", self.repr)
-        self.analyze('sh_article', Article)
-        self.analyze('spr_article', Article)
-        self.analyze('st_tweet', Blog)
+        self.get_info()
+        self.analyze('sh_article', Article.Article)
+        self.analyze('spr_article', Article.Article)
+        self.analyze('st_tweet', Blog.Blog)
+
+

@@ -58,7 +58,9 @@ class Text(object):
     def initialize(self, lower = None, stemmer = None, stem_titles = None):
         if lower is not None:
             self.lower = lower
-        if stemmer is 'wnl':
+        if stemmer == 'wnl':
+            self.stemmer = wnl
+        else:
             self.stemmer = wnl
         if stem_titles is not None:
             self.stem_titles = stem_titles

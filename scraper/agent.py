@@ -101,7 +101,10 @@ class Agent:
         logging.info("Initializing task %d: %s", task[0], taskType.taskName)
         taskImpl = taskType(self, pickle.loads(base64.b64decode(task[5])))
         taskImpl.tid = task[0]
-        taskImpl.after = datetime.strptime(task[2], "%Y-%m-%d %H:%M:%S.%f")
+        try:
+            taskImpl.after = datetime.strptime(task[2], "%Y-%m-%d %H:%M:%S.%f")
+        except ValueError:
+            taskImpl.after = datetime.strptime(task[2], "%Y-%m-%d %H:%M:%S")
         taskImpl.delta = task[3]
         taskImpl.reschedule = task[4]
 

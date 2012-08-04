@@ -13,7 +13,7 @@ class Article(Blog):
 
     def extract_sentences(self):
         sentences = tokenizer.tokenize(self.text)
-        self.sentences = [Sentence(self, t) for t in sentences]
+        self.sentences = [Sentence(self, t, self.lower, self.stemmer, self.stem_titles) for t in sentences]
         for sent in self.sentences:
             sent.initialize(self.lower, self.stemmer, self.stem_titles)
 
@@ -35,14 +35,14 @@ class Article(Blog):
                 if co not in data:
                     data[co] = values[co]
                 else: 
-                    data[co]['tf'] += values['tf']
-                    data[co]['df'] += values['df']
-                    data[co]['positive'] += values['positive']
-                    data[co]['negative'] += values['negative']
-                    data[co]['subjectivity'] += values['subjectivity']
+                    data[co]['tf'] += values[co]['tf']
+                    data[co]['df'] += values[co]['df']
+                    data[co]['positive'] += values[co]['positive']
+                    data[co]['negative'] += values[co]['negative']
+                    data[co]['subjectivity'] += values[co]['subjectivity']
 
         for co in data:
-            data[co]['contribution'] = float(data[co]['df']) / len(self.sententes)
+            data[co]['contribution'] = float(data[co]['df']) / len(self.sentences)
             data[co]['df'] = 1
 
         return data

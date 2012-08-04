@@ -14,7 +14,5 @@ class Blog(Text):
             except Exception:
                 self.date = datetime.strptime(art[0], '%Y-%m-%d')
 
-        self.initialize()
-
     def __str__(self):
         return self.title if self.title else self.raw_text

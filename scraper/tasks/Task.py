@@ -28,9 +28,10 @@ class Task(object):
         self.db = self.agent.db
     
     def parse_next(self):
+        now = datetime.now()
         delta = str(self.delta).split(' ')
         if len(delta) is 1:
-            return (self.after or self.starting or datetime.now()) + timedelta(seconds = int(delta[0]))
+            return (self.after or self.starting or now) + timedelta(seconds = int(delta[0]))
         else:
             (number, unit) = delta
             number = int(number)
@@ -38,11 +39,14 @@ class Task(object):
                 unit = unit[:-1]
                 self.delta = self.delta[:-1]
             
-            old_date = (self.after or self.starting or datetime.now())
-            new_date = old_date + (number * DELTA[unit])
-            if unit == 'month':
-                while new_date.month - old_date.month % 12 > 1:
-                    new_date -= timedelta(days=1)
+            old_date = (self.after or self.starting or now)
+            new_date = datetime.min
+            while new_date < now: # fast forward if we've missed a few
+                new_date = old_date + (number * DELTA[unit])
+                if unit == 'month':
+                    while new_date.month - old_date.month % 12 > 1:
+                        new_date -= timedelta(days=1)
+                old_date = new_date
             return new_date
         
     def schedule(self):
