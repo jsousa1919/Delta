@@ -112,6 +112,7 @@ class Agent:
             logging.debug("Executing...")
             taskImpl.execute()
             self.tasks_completed += 1
+            taskImpl.complete(True)
         except Exception as ex:
             self.db.rollback()
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -120,8 +121,7 @@ class Agent:
             logging.critical("Task Details: %d - %s %s", taskImpl.tid, taskImpl.taskName, str(taskImpl.args))
             for tb in trace:
                 logging.critical(tb)
-
-        taskImpl.complete()
+            taskImpl.complete(False)
 
 def main():
     agent = Agent("config.txt")

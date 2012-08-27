@@ -82,6 +82,7 @@ class STQueryStockTask(STTask):
 
         self.id = self.get_stock(self.symbol)
         self.last = self.stock_update(self.id)
+        return self.last
 
     def __add_tweet(self, user, date, msg, refs):
         uid = self.get_user(user)
@@ -121,7 +122,8 @@ class STQueryStockTask(STTask):
         self.db.query(sql, [self.now, self.id])
         
     def execute(self):
-        self.get_info()
+        if not self.get_info():
+            return
         logging.info("Checking new StockTwits for %s", self.symbol)
         nextMax = False
         history = (self.poll_id == "history") or bool(self.max)
@@ -249,7 +251,7 @@ class STQueryTrendingNowTask(STTask):
 
         logging.debug("Parsing")
         self.data = []
-        for sym in soup.find(attrs={"class": "scrollableArea"}).findAll("p"):
+        for sym in soup.find(attrs={"id": "scrollingText"}).findAll("a"):
             if sym.text.startswith("$"):
                 self.data.append(sym.text[1:])
 

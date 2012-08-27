@@ -50,9 +50,12 @@ class TextTask(Task):
         return entry[0] if entry else 0
     
     def get_text(self, table, rid, mx):
-        sql = "SELECT id, date, text FROM %s WHERE id NOT IN (SELECT id FROM %s WHERE rid = ?) LIMIT ?"
-        res = self.db.query(sql % (table, table + "_representation"), [rid, mx])
+        sql = "SELECT id, date, text FROM %s WHERE id NOT IN (SELECT id FROM %s_representation WHERE rid = ?) LIMIT ?"
+        res = self.db.query(sql % (table, table), [rid, mx])
         return [{'id': tid, 'date': date, 'text': text} for (tid, date, text) in res]
+
+    def check_dup(self, table, rid, dupid):
+        return self.db.bool_query("SELECT id FROM %s_representation WHERE rid = ? AND id = ?" % table, [rid, dupid])
 
 
 class TextAnalysisTask(TextTask):
@@ -62,7 +65,7 @@ class TextAnalysisTask(TextTask):
         super(TextAnalysisTask, self).__init__(agent, args)
         self.repr = int(args[0]) if len(args) > 0 else None
         if self.repr == "current": self.repr = None
-        self.max = int(args[1]) if len(args) > 1 else 100
+        self.max = int(args[1]) if len(args) > 1 else 1000
 
     def get_info(self):
         if not self.repr:
@@ -75,6 +78,8 @@ class TextAnalysisTask(TextTask):
         corpus = self.get_text(table, self.repr, self.max)
         logging.info("Analyzing %d articles from %s", len(corpus), table)
         for article in corpus:
+            if self.check_dup(table, self.repr, article['id']):
+                continue
             t = text_class(None, article['date'], article['text'], bool(self.lowercase), self.stemmer, bool(self.stem_titles))
             t.extract_mentions(self.companies)
             res = t.process((lambda x: self.subjectivity(x)), (lambda x: self.sentiment(x)))
@@ -90,6 +95,7 @@ class TextAnalysisTask(TextTask):
                     'subjectivity': data['subjectivity'],
                     'contribution': data['contribution']
                 })
+            self.db.commit()
 
     def execute(self):
         self.get_info()

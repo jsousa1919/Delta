@@ -24,13 +24,16 @@ class SHScrapeTask(Task):
     """
 
     taskName = "SHScrape"
+    def __init__(self, agent, args):
+        super(SHScrapeTask, self).__init__(agent, args)
+        self.history = (len(args) > 0)
         
     def execute(self):
         logging.info("Scraping StockHouse")
         companies = self.followed_stocks() # ['ZIP', 'LNKD', 'GIS', 'MHP', 'NKE', 'RL', 'VZ', 'AAPL', 'CAT']
         for company in companies:
             #collect all new StockHouse articles
-            newArticles = SHQueryStock(self.agent, [company])
+            newArticles = SHQueryStock(self.agent, [company, self.history])
             newArticles.delta = random.randrange(1,86400)
             newArticles.schedule() 
             
@@ -40,6 +43,7 @@ class SHQueryStock(SHTask):
     def __init__(self, agent, args):
         super(SHQueryStock, self).__init__(agent, args)
         self.symbol = args[0]
+        self.history = (len(args) > 1)
         
     def get_info(self):
         self.now = datetime.datetime.now()
@@ -69,34 +73,13 @@ class SHQueryStock(SHTask):
                     date = datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
                 #get article
                 aurl = "http://www.stockhouse.com/FinancialTools/" + aurl
-                newPage = SHQueryArticle(self.agent, [aurl, date, headline, self.id, self.last, self.now])
-                newPage.delta = random.randrange(1, 3600)
-                newPage.schedule()
-
-class SHNewPage(Task):
-    taskName = "SHNP"
-    
-    def __init__(self, agent, args):
-        super(SHNewPage, self).__init__(agent, args)
-        self.url = args[0]
-        self.date = args[1]
-        self.headline = args[2]
-        self.id = args[3]
-        self.last = args[4]
-        self.now = args[5]
-        
-    def execute(self):
-        logging.info("Retrieving new StockHouse page")
-        htmlNP = self.get_page(self.url)
-        soupNP = BeautifulSoup(htmlNP)
-        frame = soupNP.find("iframe", id="ctl00_cphMainContent_frmTool") #frame that contains article
-        if frame is not None:
-            frameLink = "http://www.stockhouse.com"+frame["src"][2:]  
-            article = SHQueryArticle(self.agent, [self.url, self.date, self.headline, self.id, self.last, self.now])
-            article.schedule()
-        else:
-            article = SHQueryArticle(self.agent, [self.url, self.date, self.headline, self.id, self.last, self.now])
-            article.schedule()
+                newPage = SHQueryArticle(self.agent, [aurl, date, headline, self.id, self.last, self.now, self.history])
+                if self.history:
+                    newPage.schedule()
+                    return
+                else:
+                    newPage.delta = random.randrange(1, 3600)
+                    newPage.schedule()
             
             
 class SHQueryArticle(Task):
@@ -111,6 +94,7 @@ class SHQueryArticle(Task):
         self.id = args[3]
         self.last = args[4]
         self.now = args[5]
+        self.history = args[6]
         self.data = []
         
     def get_article(self, headline):
@@ -156,18 +140,31 @@ class SHQueryArticle(Task):
         ticker_pattern = re.compile("(?:NYSE|Nasdaq|NASDAQ): ?([A-Z]+(?:\.[A-Z]+)?)\W")
         refs = [] #holds all references to other stocks(NYSE and Nasdaq only)
         article = [] #holds all paragraphs of article
-        end = 0 #used to determine when the end of the article is reached
-        frameLinkHTML = self.get_page(self.url)
-        frameSoup = BeautifulSoup(frameLinkHTML)
-        artPiece = frameSoup.find('div', attrs={"class": "ft_body"}).findAll("p") #all paragraphs in article
+        page = self.get_page(self.url)
+
+        if self.history:
+            soup = BeautifulSoup(page)
+            self.headline = soup.find("div", attrs={"class": "qmnews_headline"}).text
+            date = soup.find("div", attrs={"class": "qmnews_datetime"}).text
+            self.date = datetime.datetime.strptime(date, "%B %d, %Y - %I:%M %p %Z")
+        
+        frameSoup = BeautifulSoup(page[page.index('<body', 10000):page.index('</body>')])
+        artPiece = frameSoup.findAll("p") #all paragraphs in article
         for piece in artPiece:
-            if piece.text[:6] != "About " and end == 0:
-                article.append(piece.text)
-                if ticker_pattern.findall(piece.text):
-                    refs.extend(ticker_pattern.findall(piece.text))
-            else:
-                end = 1
+            if piece.text[:6] == "About ":
+                break
+            article.append(' ' + piece.text)
+            if ticker_pattern.findall(piece.text):
+                refs.extend(ticker_pattern.findall(piece.text))
         self.add_article(self.date, self.headline, ' '.join(article).encode("ascii", "ignore"), refs, self.url)
+
+        if self.history:
+            nav = soup.find("td", attrs={"class": "ft_more_link_r"}).find("a")
+            if nav.text.find("<<") >= 0:
+                t = SHQueryArticle(self.agent, [nav['href'], None, None, self.id, self.last, self.now, self.history])
+                t.delta = random.randrange(1, 300)
+                t.schedule()
+
         self.finish()
     
 class SHDumpTask(DumpTask):

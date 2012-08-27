@@ -75,7 +75,7 @@ class Task(object):
         if not self.db.bool_query(sql, vals):
             self.schedule()
 
-    def complete(self):
+    def complete(self, success):
         sql = "UPDATE tasks SET complete = ?, completed_on = ? WHERE tid = ?"
         params = [1, datetime.now(), self.tid]
         self.db.query(sql, params)
@@ -85,6 +85,10 @@ class Task(object):
         # Reschedule
         if self.reschedule and self.reschedule is not '0':
             logging.info("Rescheduling Task")
+            self.schedule()
+        if success is False:
+            self.delta = 300
+            self.reschedule = False
             self.schedule()
 
     def get_stock(self, symbol):
